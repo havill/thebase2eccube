@@ -10,14 +10,14 @@ to EC-CUBE (an open source as well as hosted e-Commerce solution primarily used 
 
 ## NOTES:
 
-- CSV INPUT FILE MUST BE UTF-8 ENCODING AND THE UNICODE CHARACTER SET WITH NO BYTE ORDER MARK.
-  NOTE THAT THE DEFAULT OUTPUT FORMAT FOR EXPORTED JAPANESE CSV FILES IS USUALLY SHIFT-JIS,
-  SO YOU WILL NEED TO PRE-CONVERT THE FILE USING ICONV.
-- THE DEFAULT OUTPUT ENCODING IS UTF-8 WITH NO BOM (BYTE ORDER MARK). JAPANESE SAAS
-  SYSTEMS, EVEN ONES THAT WORK IN UNICODE NORMALLY, OFTEN EXPECT SHIFT-JIS FOR CSV IMPORT
-- CSV FILES USUALLY HAVE A CRLF FOR THE NEWLINE, EVEN ON LINUX SYSTEMS. IF YOU ARE RUNNING
-  AWK/GAWK ON A WINDOWS SYSTEM, YOU MAY NEED TO SET THE SPECIAL BINMODE VARIABLE TO "3" ON
-  THE COMMAND LINE TO KEEP WINDOWS FROM ATTEMPTING TO SILENTLY CONVERT THE END-OF-LINES CHARS.
+- CSV input file must be utf-8 encoding and the unicode character set with no byte order mark.
+  Note that the default output format for exported japanese CSV files is usually shift-jis,
+  So you will need to pre-convert the file using iconv.
+- The default output encoding is utf-8 with no bom (byte order mark). Japanese ASP/SAAS
+  systems, even ones that work in Unicode normally, often expect shift-jis for CSV import
+- CSV files usually have a crlf for the newline, even on linux systems. If you are running
+  AWK/GAWK on a Windows system, you may need to set the special BINMODE variable to "3" on
+  The command line to keep windows from attempting to silently convert the end-of-lines chars.
 
 ## PREREQUISITES:
 
@@ -25,7 +25,7 @@ to EC-CUBE (an open source as well as hosted e-Commerce solution primarily used 
   to curl or something else if you prefer
 - This script uses GNU specific AWK extensions. It probably won't won't on POSIX or lesser AWK
 - The script assumes that THE BASE stores all images in the cloud in the same place. Tweak the
-  variable below if the images are elsewhere.
+  global AWK variable if the images are elsewhere.
 - The EC-CUBE mapping for 公開ステータス mapping should be "1" for 公開 (public), in order to match
   THE BASE's idea of a publicly listed item. This is not a problem if you're using the default/demo
   mappings for EC-CUBE (ex. the demo "GELATO" site)
