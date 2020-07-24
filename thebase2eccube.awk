@@ -1,4 +1,5 @@
 # THE BASE → EC-CUBE 4.x Product CSV list converter
+# v1.0.0   2020-Jul-04
 # Copyright 2020, Eido Inoue
 #
 # An AWK program that will read CSV exported by THE BASE (an ASP hosted e-Commerce solution for Japan)
