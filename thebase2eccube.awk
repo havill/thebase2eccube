@@ -1,5 +1,4 @@
 # THE BASE → EC-CUBE 4.x Product CSV list converter
-# v1.0.0   2020-Jul-04
 # Copyright 2020, Eido Inoue
 #
 # An AWK program that will read CSV exported by THE BASE (an ASP hosted e-Commerce solution for Japan)
@@ -7,14 +6,14 @@
 #
 # ## NOTES:
 #
-# - CSV INPUT FILE MUST BE UTF-8 ENCODING AND THE UNICODE CHARACTER SET WITH NO BYTE ORDER MARK.
-#    NOTE THAT THE DEFAULT OUTPUT FORMAT FOR EXPORTED JAPANESE CSV FILES IS USUALLY SHIFT-JIS,
-#    SO YOU WILL NEED TO PRE-CONVERT THE FILE USING ICONV.
-# - THE DEFAULT OUTPUT ENCODING IS UTF-8 WITH NO BOM (BYTE ORDER MARK). JAPANESE SAAS
-#    SYSTEMS, EVEN ONES THAT WORK IN UNICODE NORMALLY, OFTEN EXPECT SHIFT-JIS FOR CSV IMPORT
-# - CSV FILES USUALLY HAVE A CRLF FOR THE NEWLINE, EVEN ON LINUX SYSTEMS. IF YOU ARE RUNNING
-#    AWK/GAWK ON A WINDOWS SYSTEM, YOU MAY NEED TO SET THE SPECIAL BINMODE VARIABLE TO "3" ON
-#    THE COMMAND LINE TO KEEP WINDOWS FROM ATTEMPTING TO SILENTLY CONVERT THE END-OF-LINES CHARS.
+# - CSV input file must be utf-8 encoding and the Unicode character set with no Byte Order Mark.
+#    note that the default output format for exported japanese CSV files is usually Shift-JIS,
+#    so you will need to pre-convert the file using iconv.
+# - The default output encoding is UTF-8 with no BOM (byte order mark). japanese saas
+#    systems, even ones that work in Unicode normally, often expect shift-jis for csv import
+# - CSV files usually have a crlf for the newline, even on Linux systems. if you are running
+#    awk/gawk on a Windows system, you may need to set the special BINMODE variable to "3" on
+#    the command line to keep Windows from attempting to silently convert the end-of-lines chars.
 #
 # ## PREREQUISITES:
 #
@@ -48,37 +47,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-function set_mandatory(array_2d, csv, sentinel) {
-    if (csv == "the_base") {
-        # these first four fields are mandatory in THE BASE as of 2020-Jul-24
-        array_2d[csv, "商品ID"] = sentinel
-        array_2d[csv, "商品"] = sentinel
-        array_2d[csv, "種類ID"] = sentinel
-        array_2d[csv, "種類名"] = sentinel
-    }
-    else if (csv == "ec_cube") {
-        # these fields are mandatory (必項) for EC-CUBE 4.0.4 商品CSV登録/一括登録
-        array_2d[csv, "公開ステータス(ID)"] = sentinel
-        array_2d[csv, "商品名"] = sentinel
-        array_2d[csv, "販売種別(ID)"] = sentinel
-        array_2d[csv, "販売価格"] = sentinel
-    }
-    return
-}
-
-function is_empty_array(matrix) {
-    empty = "true"     # empty or NULL string in awk is "false"; anything else evals to true
-    for (z in array_2d) {
-        print "WARNING: this is missing from the CSV header: " z > "/dev/stderr"  #DEBUG
-        empty = ""
-    }
-    return empty;
-}
-
 BEGIN {
     # This field pattern separator feature requires GNU not POSIX or plain awk
     # for processing RFC 4180 CSV escape patterns (quoted fields and embedded commas)
-    FPAT = "([^,]*)|(\"[^\"]+\")"   # change of first + to * allows fields to be empty
+    FPAT = "(\"[^\"]+\")|([^,]*)"   # change of first + to * allows fields to be empty
 
     has_header["the_base"] = 1      # CSV files exported from THE BASE CSV商品管理 App will always have this
     has_header["ec_cube"] = 1       # CSV files imported with EC-CUBE 4.x 商品管理 function MUST have this
@@ -99,8 +71,6 @@ BEGIN {
     cdn_prefix = "https://base-ec2.akamaized.net/images/item/origin/"
     cdn_suffix = ""
 
-    set_mandatory(required_output, "ec_cube", "CHANGEME")
-
     # this long string is the first line output by 雛形ファイルダウンロード in EC-CUBE 4.x 商品CSV登録商品管理
     eccube_header = "商品ID,公開ステータス(ID),商品名,ショップ用メモ欄,商品説明(一覧),商品説明(詳細),検索ワード,フリーエリア,商品削除フラグ,商品画像,商品カテゴリ(ID),タグ(ID),販売種別(ID),規格分類1(ID),規格分類2(ID),発送日目安(ID),商品コード,在庫数,在庫数無制限フラグ,販売制限数,通常価格,販売価格,送料,税率"
 
@@ -116,11 +86,6 @@ BEGIN {
        }
        printf crlf
     }
-
-    if (!is_empty_array(required_output)) {
-        print "ERROR: some required fields for EC-CUBE 4.x are missing." > "/dev/stderr"
-        exit 1
-    }
 }
 
 function dequote(string) {
@@ -133,17 +98,10 @@ function dequote(string) {
 
 # special do-once rule for processing the CSV line #1 header (if marked as present)
 NR == 1 && has_header["the_base"] {
-    set_mandatory(required_input, "the_base", "CHANGEME")
-
     # learn the order of the fields and what fields are present
     for (i = 1; i <= NF; i++) {
         thebase_field[i] = dequote($i)          # init element from CSV column/string/index with a null/empty value
         delete required_input["the_base", thebase_field[i]]
-    }
-
-    if (!is_empty_array(required_input)) {
-        print "WARNING: some required fields for THE BASE were missing." > "/dev/stderr"
-        # exit 1 #DEBUG
     }
 }
 
@@ -157,6 +115,32 @@ function join(array, start, end, sep, result, i) {
     for (i = start + 1; i <= end; i++)
         result = result sep array[i]
     return result
+}
+
+function csv_escape(s) {
+    changed = ""
+    if (index(s, ",") != 0)
+        changed = 1
+    if (gsub(/<[bB][rR] *\/?>/, crlf, s) > 0)  # restore NLs changed by pre-processor to <br/>
+        changed = 1
+
+    # Octal \043 = U+0023 = '#'
+
+    # restore commas changed by pre-processor
+    if (gsub(/&\04344;/, ",", s) > 0) 
+        changed = 1
+    if (gsub(/&\043x2[cC];/, ",", s) > 0) 
+        changed = 1
+
+    # restore double quotes to CSV escaped forms
+    gsub(/"/, "\"\"", s)
+    gsub(/&[qQ][uU][oO][tT];/, "\"\"", s)
+    gsub(/&\043x22;/, ",", s);
+    gsub(/&\04334;/, ",", s);
+
+    if (changed)
+        s = "\"" s "\""
+    return s
 }
 
 NR > 1 {
@@ -185,26 +169,44 @@ NR > 1 {
                 cmd = download " " cdn_prefix filename[i] cdn_suffix
                 if (system(cmd) != 0) {
                     print "ERROR: this command failed: " cmd > "/dev/stderr"
+                    print "LINE #", NR > "/dev/stderr"
                     exit 1
                 }
             }
         }
     }
+    
+    images_field = join(filename, 1, img_count, comma, images_field, i)      # convert array into comma separated single string
+    gsub(/,+$/, "", images_field)                             # trim excess commas (empty img slots)
 
-    raw_img_list = join(filename, 1, img_count, comma, list, i)
-    gsub(/,+$/, "", raw_img_list)                       # remove all the trailing commas (unused THE BASE image fields)
-    quoted_img_list = "\"" raw_img_list "\""
+    # make sure the mandatory fields in EC-CUBE get set
+    if (!product["公開状態"])
+        public_status = "2"                             # 1 = public / 2 = private
+    else public_status = product["公開状態"]
+    if (!product["商品名"])
+        product_name = "不明"
+    else product_name = product["商品名"]
+    if (product["価格"])
+        price = product["価格"]
+    else price = 0
+    if (product["税率"] = "1")
+        tax_rate = 10
+    else if (product["税率"] = "2")
+        tax_rate = 8
+    if (length(product["説明"]) >= 3000) 
+        description = substr(product["説明"], 1, 2999)
+    else description = product["説明"]
 
     value["商品ID"]             = ""                    # null/empty string to create new item, otherwise valid existing ID to update
-    value["公開ステータス(ID)"]  = product["公開状態"]    # REQUIRED: 公開ステータス(名称) / 1 = 公開
-    value["商品名"]             = product["商品名"]      # REQUIRED: product name
-    value["ショップ用メモ欄"]    = "JAN/GTIN = " product["JAN/GTIN"]
+    value["公開ステータス(ID)"]  = public_status         # REQUIRED: 公開ステータス(名称) / 1 = 公開 / 2 = 非公開
+    value["商品名"]             = product_name          # REQUIRED: product name
+    value["ショップ用メモ欄"]    = product["JAN/GTIN"]
     value["商品説明(一覧)"]      = ""
-    value["商品説明(詳細)"]      = product["説明"]
+    value["商品説明(詳細)"]      = description
     value["検索ワード"]          = product["種類名"]
-    value["フリーエリア"]        = "THE BASE→CSV商品管理App→CSVダウンロード→登録済み商品の情報を編集するためのCSVファイル"
-    value["商品削除フラグ"]      = "0"                  # "0" or empty string to register, "1" to delete
-    value["商品画像"]           = quoted_img_list       # comma separated list of filenames surrounded by double quotes
+    value["フリーエリア"]        = "THE BASE: 登録済み商品の情報を編集するためのCSVファイル"
+    value["商品削除フラグ"]      = "0"                    # "0" or empty string to register, "1" to delete
+    value["商品画像"]           = images_field            # comma separated list of filenames surrounded by double quotes
     value["商品カテゴリ(ID)"]    = ""
     value["タグ(ID)"]           = ""
     value["販売種別(ID)"]       = "1"                     # REQUIRED / 1 = "販売種別A" in the demo GELATO site
@@ -215,23 +217,17 @@ NR > 1 {
     value["在庫数"]             = product["在庫数"]        # REQUIRED IF: must be greater than 0 if the "unlimited supply" flag is zero
     value["在庫数無制限フラグ"]  = "0"                      # "0" = limited inventory (see above). "1" = unlimited
     value["販売制限数"]         = "1"                      # must be "1" or higher
-    value["通常価格"]           = product["価格"]          # must be "0" or higher
-    value["販売価格"]           = product["価格"]          # REQUIRED: must be zero or higher
+    value["通常価格"]           = price                   # must be "0" or higher
+    value["販売価格"]           = price                   # REQUIRED: must be zero or higher
     value["送料"]               = ""                      # REQUIRED IF: per-product shipping fees setting is enabled. "0" or greater
-    value["税率"]               = product["税率"]         # REQUIRED IF: per-product tax rate setting is enabled. "0" or greater
+    value["税率"]               = tax_rate                # REQUIRED IF: per-product tax rate setting is enabled. "0" or greater
 
-    set_mandatory(required_output, "ec_cube", "CHANGEME")
     for (i = 1; field[i] != ""; i++) {
         if (i > 1)
             printf "%s", comma
-        printf "%s", value[field[i]]
+        printf "%s", csv_escape(value[field[i]])
         if (length(value[field[i]]) > 0)
             delete required_output["ec_cube", field[i]]
     }
     printf "%s", crlf
-
-    if (!is_empty_array(required_output)) {
-        print "ERROR: some required fields for EC-CUBE 4.x are missing." > "/dev/stderr"
-        exit 1
-    }
  }

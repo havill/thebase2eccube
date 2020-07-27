@@ -1,7 +1,6 @@
 *.csv
-no-moa-nl
-test.utf.csv
-no-moa-nl.c
+a.out
+esc-csv
 *.jpg
 *.png
 *.gif
