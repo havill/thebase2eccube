@@ -1,18 +1,17 @@
-/* # NO MOA NL v1.0 2020-07-24
-   ## (no more newlines)
+/* # ESC-CSV v2.0 2020-07-27
+   ## (pre-Escape The CSV file)
    ## Copyright 2020, Eido Inoue
  
-   - converts newlines embedded in CSV fields into HTML-ish <br/>.
-   - Also respects and understands RFC 4180 concepts of double-quote escaping
+   - converts newlines, double quotes, and commasin CSV fields into HTML..
+   - Respects and understands RFC 4180 concepts of double-quote escaping
      of entire fields and single characters.
    - Will output CRLF, rather than Unix style LF,
      for the newline as this is RFC 4180 compliant
 
-    created this when I realized that it was impossible to properly process
+    I created this when I realized that it was impossible to properly process
     CSV files using AWK or GAWK, so this can be used as a pre-processor
     if you know the fields will be used in web markup.
-*/
-/*
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
