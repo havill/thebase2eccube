@@ -82,7 +82,6 @@ BEGIN {
            if (i > 1)
                printf "%s", comma
            printf "%s", field[i]
-           delete required_output["ec_cube",field[i]]
        }
        printf crlf
     }
@@ -99,10 +98,8 @@ function dequote(string) {
 # special do-once rule for processing the CSV line #1 header (if marked as present)
 NR == 1 && has_header["the_base"] {
     # learn the order of the fields and what fields are present
-    for (i = 1; i <= NF; i++) {
+    for (i = 1; i <= NF; i++)
         thebase_field[i] = dequote($i)          # init element from CSV column/string/index with a null/empty value
-        delete required_input["the_base", thebase_field[i]]
-    }
 }
 
 # join an array into a string: arnold@gnu.org, public domain, May 1993
@@ -193,8 +190,10 @@ NR > 1 {
         tax_rate = 10
     else if (product["税率"] = "2")
         tax_rate = 8
-    if (length(product["説明"]) >= 3000) 
+    if (length(product["説明"]) >= 3000) {
         description = substr(product["説明"], 1, 2999)
+        print "WARNING: LINE #", NR, " description field truncated to less than 3000 characters." > "/dev/stderr"
+    }
     else description = product["説明"]
 
     value["商品ID"]             = ""                    # null/empty string to create new item, otherwise valid existing ID to update
@@ -204,7 +203,7 @@ NR > 1 {
     value["商品説明(一覧)"]      = ""
     value["商品説明(詳細)"]      = description
     value["検索ワード"]          = product["種類名"]
-    value["フリーエリア"]        = "THE BASE: 登録済み商品の情報を編集するためのCSVファイル"
+    value["フリーエリア"]        = ""
     value["商品削除フラグ"]      = "0"                    # "0" or empty string to register, "1" to delete
     value["商品画像"]           = images_field            # comma separated list of filenames surrounded by double quotes
     value["商品カテゴリ(ID)"]    = ""
@@ -226,8 +225,6 @@ NR > 1 {
         if (i > 1)
             printf "%s", comma
         printf "%s", csv_escape(value[field[i]])
-        if (length(value[field[i]]) > 0)
-            delete required_output["ec_cube", field[i]]
     }
     printf "%s", crlf
  }

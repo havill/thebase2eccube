@@ -1,49 +1,32 @@
-#!\bin/bash
+#!/bin/bash
 
-export LC_ALL=en_US.UTF-8 # make sure awk/date etc behave consistently
+export LC_ALL=en_US.UTF-8 # make sure awk etc behave consistently
+
+if [ $# -ne 2 ]
+then
+    echo "Usage: $0 ec-cube-home.dir thebase-products-export.sjis.csv" > /dev/stderr
+    exit 1
+fi
+if [ ! -d $1 -o ! -f $2 ]
+then
+    echo "1st argument should be the EC-CUBE 4.x home directory" > /dev/stderr
+    echo "2nd argument should be a CSV file exported by THE BASE" > /dev/stderr
+    exit 1
+fi
+
 program=$(basename $0 .bash)
-argument=$1
-timestamp=$(date -u "+%Y%m%d%H%M%S")
+eccube_home=$(realpath $1)/html/upload/save_image/  # EC-CUBE 4.x dir structure
+thebase_csv=$(realpath $2)
+charset=shift_jis
 
-if [ $# -ne 1 ]
-then
-    echo "Usage: $0 products-export.thebase.sjis.csv"
-    exit 1
-fi
-
-filename=$(basename "${argument}" .csv)
+preawk="$(basename ${program})-pre"
 gawk="$(basename ${program}).awk"
-imgdir="${filename}.${timestamp}"
 
+preawk_path=$(realpath ${preawk})
+gawk_path=$(realpath ${gawk})
+csv_path=${PWD}/$(basename "${thebase_csv}" .csv).eccube.csv
 
-original=${filename}.thebase.utf-8.csv
-converted=${filename}.eccube.utf-8.csv
-shiftjis=${filename}.eccube.sjis.csv
+make ${preawk}  # compile the esc-csv preprocessor if needed
 
-make    # compile the esc-csv preprocessor if needed
-
-if [ ! -f ${gawk} ]
-then
-    echo "Error: Can't find awk processor program: ${gawk}"
-    exit 1
-fi
-
-if iconv -f sjis -t utf-8 ${argument} -o ${original}
-then
-    if [ -d "${imgdir}" ]
-    then
-        echo "Warning: directory ${imgdir} already exists. Things may get overwritten"
-    elif [ -e "${imgdir}" ]
-    then
-        echo "Error: a file by the name ${imgdir} already exists!"
-        exit 1
-    else
-        mkdir ${imgdir}
-    fi
-
-    ./esc-csv ${original} | awk -f ${gawk} -o ${converted} 
-    iconv -c -f utf-8 -t sjis ${converted} -o ${shiftjis}   # -c to not fail and just ignore proprietary unconvertable shift-jis
-
-    echo "EC-CUBE CSV file for import, encoded in Shift-JIS, is: ${shiftjis}"
-    echo "Images for import is in the directory: ${imgdir}"
-fi
+cd ${eccube_home}    # make sure the downloaded images are deposited directly in ec-cube's imgdir
+iconv -c -f ${charset} -t utf-8 ${thebase_csv} | ${preawk_path} | awk -f ${gawk_path} | iconv -c -f utf-8 -t ${charset} -o ${csv_path}
