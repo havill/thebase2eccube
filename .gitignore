@@ -1,6 +1,6 @@
 *.csv
 a.out
-esc-csv
+*-pre
 *.jpg
 *.png
 *.gif
