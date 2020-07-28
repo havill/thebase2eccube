@@ -10,28 +10,35 @@ to EC-CUBE (an open source as well as hosted e-Commerce solution primarily used 
 
 ## NOTES:
 
-- CSV input file must be utf-8 encoding and the unicode character set with no byte order mark.
+- CSV input file must be UTF-8 encoding and the unicode character set with no byte order mark.
   Note that the default output format for exported japanese CSV files is usually shift-jis,
   So you will need to pre-convert the file using iconv.
-- The default output encoding is utf-8 with no bom (byte order mark). Japanese ASP/SAAS
-  systems, even ones that work in Unicode normally, often expect shift-jis for CSV import
-- CSV files usually have a crlf for the newline, even on linux systems. If you are running
+- The default output encoding is UTF-8 with no BOM (byte order mark U+FEFF). Japanese ASP/SAAS
+  systems, even ones that work in Unicode normally, often expect Shift-JIS for CSV import
+- CSV files usually have a CRLF for the newline, even on Linux systems. If you are running
   AWK/GAWK on a Windows system, you may need to set the special BINMODE variable to "3" on
   The command line to keep windows from attempting to silently convert the end-of-lines chars.
 
 ## PREREQUISITES:
 
-- You will need wget on the system to pull the files. You can change this in the variables below
-  to curl or something else if you prefer
-- This script uses GNU specific AWK extensions. It probably won't won't on POSIX or lesser AWK
+- This script uses GNU specific AWK extensions. It probably won't won't on POSIX or other AWKs
 - The script assumes that THE BASE stores all images in the cloud in the same place. Tweak the
   global AWK variable if the images are elsewhere.
 - The EC-CUBE mapping for 公開ステータス mapping should be "1" for 公開 (public), in order to match
   THE BASE's idea of a publicly listed item. This is not a problem if you're using the default/demo
-  mappings for EC-CUBE (ex. the demo "GELATO" site)
+  mappings for EC-CUBE (ex. EC-CUBE 4.x's demo "GELATO" site)
+- You will need a Linux environment with standard development tools (GNU make, gcc, iconv, wget, etc).
 
-## LIMITATIONS:
- 
-- AWK and even GAWK cannot process files that are both separated by newlines and have newlines
-  within fields. You will need to use a separate utility to convert or edit (valid) CSV files
-  that have embedded CR or LF or NL in the fields.
+## USAGE:
+
+- From the base directory of the bash script, run the bash script with two arguments:
+  1. the first argument is the path to the base directory of your EC-CUBE 4 installation. The
+     subdirectories `/html/upload/save_image` should be present underneath it.
+  2. The second argument is the Shift-JIS CRLF encoded CSV file output by THE BASE App
+     Apps一覧 / CSV商品管理App / CSVダウンロード / 登録済み商品の情報を編集するためのCSVファイル / ダウンロードする
+     
+  Example:
+  
+  ```
+  $ ./thebase2eccube.bash　/mnt/c/xampp/htdocs shop-example-com-19701231235959.csv
+  ```
