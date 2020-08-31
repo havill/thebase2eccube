@@ -103,7 +103,7 @@ NR == 1 && has_header["the_base"] {
 }
 
 # join an array into a string: arnold@gnu.org, public domain, May 1993
-function join(array, start, end, sep, result, i) {
+function join(array, start, end, sep,    result,    i) {
     if (sep == "")
         sep = " "
     else if (sep == SUBSEP) # magic value
